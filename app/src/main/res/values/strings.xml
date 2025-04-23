@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">WeatherTest</string>
+    <string name="type_a_city">Ingresa una ciudad</string>
+    <string name="search">Buscar</string>
+    <string name="city">Ciudad:</string>
+    <string name="temperature">Temperatura:</string>
+    <string name="description">Descripción:</string>
+    <string name="unknown_city">Ciudad desconocida</string>
+    <string name="error_search">Error al buscar la ubicación</string>
+    <string name="not_found">No se encontró la ciudad</string>
+</resources>
