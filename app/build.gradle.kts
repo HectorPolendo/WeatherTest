@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    kotlin("kapt")
 }
 
 android {
@@ -35,6 +36,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        dataBinding = true
     }
 }
 
@@ -65,6 +67,7 @@ dependencies {
 
     // MockK para pruebas
     testImplementation(libs.mockk)
+    testImplementation(libs.jetbrains.kotlinx.coroutines.test)
 
     // Google Maps
     implementation(libs.play.services.maps)

@@ -10,13 +10,15 @@ class WeatherLocalDataSource(context: Context) {
     private val gson = Gson()
 
     fun saveWeather(city: String, weather: WeatherEntity) {
+        val key = city.lowercase().trim()
         prefs.edit() {
-            putString(city, gson.toJson(weather))
+            putString(key, gson.toJson(weather))
         }
     }
 
     fun getWeather(city: String): WeatherEntity? {
-        val json = prefs.getString(city, null)
+        val key = city.lowercase().trim()
+        val json = prefs.getString(key, null)
         return json?.let { gson.fromJson(it, WeatherEntity::class.java) }
     }
 }

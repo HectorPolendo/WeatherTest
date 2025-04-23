@@ -4,8 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
-import android.view.inputmethod.InputMethodManager
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -26,10 +24,14 @@ import com.hectorpolendo.weathertest.data.datasource.remote.WeatherRemoteDataSou
 import com.hectorpolendo.weathertest.data.repository.WeatherRepositoryImpl
 import com.hectorpolendo.weathertest.databinding.ActivityMainBinding
 import com.hectorpolendo.weathertest.domain.usecase.GetWeatherUseCase
+import com.hectorpolendo.weathertest.extensions.hideKeyboard
+import com.hectorpolendo.weathertest.extensions.showToast
 import com.hectorpolendo.weathertest.presentation.viewmodel.WeatherViewModel
 import com.hectorpolendo.weathertest.presentation.viewmodel.WeatherViewModelFactory
 import com.hectorpolendo.weathertest.utils.RetrofitInstance
 import java.util.Locale
+import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.ViewModelProvider
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var viewModel: WeatherViewModel
@@ -43,16 +45,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
 
         val api = RetrofitInstance.api
         val remoteDataSource = WeatherRemoteDataSource(api, "3bf0c3f98c56bd5c27e55321182c74c5")
@@ -61,23 +61,25 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val useCase = GetWeatherUseCase(repository)
         val factory = WeatherViewModelFactory(useCase)
 
+        viewModel = ViewModelProvider(this, factory)[WeatherViewModel::class.java]
 
-        viewModel = viewModels<WeatherViewModel> { factory }.value
+        binding.lifecycleOwner = this
+        binding.viewModel = viewModel
 
+        val mapFragment = SupportMapFragment.newInstance()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.map_container, mapFragment)
+            .commit()
 
-        viewModel.weather.observe(this) { weather ->
-            binding.tvCityCont.text = weather.city
-            binding.tvTempCont.text = "${weather.temp}°C"
-            binding.tvDescCont.text = weather.desc
-        }
+        mapFragment.getMapAsync(this)
 
         binding.btnSearch.setOnClickListener {
+            binding.searchEditText.hideKeyboard()
             val city = binding.searchEditText.text.toString().trim()
             if (city.isNotEmpty()) {
                 viewModel.loadWeather(city)
                 moveMapToCity(city)
             }
-            hideKeyboard()
         }
     }
 
@@ -166,19 +168,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 map.addMarker(MarkerOptions().position(latLng).title(cityName))
                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 12f))
             } else {
-                Toast.makeText(this, getString(R.string.not_found), Toast.LENGTH_SHORT).show()
+                showToast(getString(R.string.not_found))
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, getString(R.string.error_search), Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun hideKeyboard() {
-        val view = currentFocus
-        if (view != null) {
-            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(view.windowToken, 0)
         }
     }
 
